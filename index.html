@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Свидание?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,600&family=Cormorant+Garamond:ital@0;1&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#FFF6F4;
+    --bg2:#FBE8E4;
+    --ink:#4A1F2B;
+    --ink-soft:#7A4552;
+    --rose:#E8A0A8;
+    --rose-deep:#C97B87;
+    --gold:#D8B26A;
+    --cream:#FFFBF8;
+    --shadow: 0 20px 60px -20px rgba(74,31,43,0.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 15% 20%, #ffe3de 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, #f6d4d9 0%, transparent 45%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    font-family:'Poppins', sans-serif;
+    color:var(--ink);
+    overflow-x:hidden;
+    position:relative;
+    padding:24px;
+  }
+
+  /* ambient drifting petals */
+  .petal{
+    position:fixed;
+    top:-40px;
+    font-size:18px;
+    opacity:0.55;
+    pointer-events:none;
+    animation: drift linear infinite;
+    filter: hue-rotate(0deg);
+    z-index:0;
+  }
+  @keyframes drift{
+    0%{ transform: translateY(-10vh) translateX(0) rotate(0deg); }
+    100%{ transform: translateY(110vh) translateX(30px) rotate(280deg); }
+  }
+
+  .card{
+    position:relative;
+    z-index:2;
+    width:100%;
+    max-width:440px;
+    background:var(--cream);
+    border-radius:28px;
+    box-shadow:var(--shadow);
+    padding:44px 32px 36px;
+    text-align:center;
+    border:1px solid rgba(201,123,135,0.15);
+  }
+
+  .progress{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:28px;
+  }
+  .progress span{
+    width:8px; height:8px;
+    border-radius:50%;
+    background:#EED9DA;
+    transition:all .4s ease;
+  }
+  .progress span.active{
+    background:var(--rose-deep);
+    width:22px;
+    border-radius:5px;
+  }
+  .progress span.done{
+    background:var(--gold);
+  }
+
+  .eyebrow{
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-size:17px;
+    color:var(--rose-deep);
+    letter-spacing:.03em;
+    margin:0 0 6px;
+  }
+
+  h1{
+    font-family:'Playfair Display', serif;
+    font-weight:600;
+    font-size:28px;
+    line-height:1.3;
+    margin:0 0 8px;
+  }
+
+  p.sub{
+    font-size:14.5px;
+    color:var(--ink-soft);
+    margin:0 0 30px;
+    line-height:1.5;
+  }
+
+  .step{ display:none; animation: fadeIn .5s ease; }
+  .step.visible{ display:block; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  /* Step 1 buttons */
+  .yn-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+  }
+  .btn{
+    border:none;
+    border-radius:999px;
+    padding:14px 30px;
+    font-family:'Poppins', sans-serif;
+    font-size:15px;
+    font-weight:500;
+    cursor:pointer;
+    touch-action:none;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-yes{
+    background:linear-gradient(135deg, var(--rose-deep), var(--rose));
+    color:#fff;
+    box-shadow:0 10px 24px -8px rgba(201,123,135,0.6);
+  }
+  .btn-yes:hover{ transform:translateY(-2px) scale(1.03); }
+  .btn-no{
+    background:#fff;
+    color:var(--ink-soft);
+    border:1px solid #EED9DA;
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    transition: left .28s cubic-bezier(.34,1.56,.64,1), top .28s cubic-bezier(.34,1.56,.64,1), transform .2s ease;
+  }
+  /* play area the "Нет" button can roam inside — sized generously for a thumb, not a cursor */
+  #noZone{
+    position:relative;
+    width:100%;
+    height:150px;
+    background:#FFF9F8;
+    border:1px dashed #F3D9DA;
+    border-radius:18px;
+  }
+
+  .hint{
+    margin-top:18px;
+    font-size:12.5px;
+    color:#B98E96;
+    font-style:italic;
+  }
+
+  /* Step 2 - date/time */
+  .field{
+    text-align:left;
+    margin-bottom:18px;
+  }
+  .field label{
+    display:block;
+    font-size:12.5px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--rose-deep);
+    margin-bottom:8px;
+    font-weight:500;
+  }
+  input[type="date"]{
+    width:100%;
+    padding:12px 14px;
+    border-radius:14px;
+    border:1px solid #EED9DA;
+    font-family:'Poppins', sans-serif;
+    font-size:14.5px;
+    color:var(--ink);
+    background:#fff;
+  }
+  .time-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .choice-btn{
+    padding:13px 10px;
+    border-radius:14px;
+    border:1px solid #EED9DA;
+    background:#fff;
+    font-family:'Poppins', sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .choice-btn:hover{ border-color:var(--rose); }
+  .choice-btn.selected{
+    background:linear-gradient(135deg, var(--rose-deep), var(--rose));
+    color:#fff;
+    border-color:transparent;
+    box-shadow:0 8px 18px -8px rgba(201,123,135,0.6);
+  }
+
+  /* Step 3 - food */
+  .food-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:8px;
+  }
+  .food-card{
+    padding:18px 10px;
+    border-radius:16px;
+    border:1px solid #EED9DA;
+    background:#fff;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .food-card .emoji{ font-size:26px; display:block; margin-bottom:8px; }
+  .food-card span.label{ font-size:13.5px; font-weight:500; }
+  .food-card:hover{ transform:translateY(-2px); border-color:var(--rose); }
+  .food-card.wide{
+    grid-column: 1 / -1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .food-card.wide .emoji{ margin-bottom:0; font-size:22px; }
+  .food-card.selected{
+    background:linear-gradient(135deg, var(--rose-deep), var(--rose));
+    color:#fff;
+    border-color:transparent;
+  }
+
+  .next-btn{
+    margin-top:26px;
+    width:100%;
+    background:linear-gradient(135deg, var(--rose-deep), var(--rose));
+    color:#fff;
+    border:none;
+    border-radius:16px;
+    padding:15px;
+    font-family:'Poppins', sans-serif;
+    font-size:15px;
+    font-weight:500;
+    cursor:pointer;
+    transition:opacity .2s ease, transform .15s ease;
+  }
+  .next-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .next-btn:not(:disabled):hover{ transform:translateY(-2px); }
+
+  /* Final screen */
+  .final .heart-big{
+    font-size:44px;
+    margin-bottom:10px;
+    animation: pop .6s ease;
+  }
+  @keyframes pop{ 0%{transform:scale(0);} 60%{transform:scale(1.2);} 100%{transform:scale(1);} }
+  .summary{
+    background:#FFF1EF;
+    border-radius:16px;
+    padding:18px;
+    text-align:left;
+    margin-top:20px;
+    font-size:14px;
+    line-height:1.9;
+  }
+  .summary b{ color:var(--rose-deep); }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <div class="progress" id="progress">
+    <span class="active" data-i="0"></span>
+    <span data-i="1"></span>
+    <span data-i="2"></span>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step visible" id="step0">
+    <p class="eyebrow"></p>
+    <h1>Катя, сколько можно. Пойдем на свидание!</h1>
+
+    <div class="yn-wrap">
+      <button class="btn btn-yes" onclick="goStep(1)">Да, конечно</button>
+      <div id="noZone">
+        <button class="btn btn-no" id="noBtn">Нет</button>
+      </div>
+    </div>
+  </div>
+
+    <p class="hint" id="hint">👆</p>
+  <!-- STEP 2 -->
+  <div class="step" id="step1">
+    <p class="eyebrow"></p>
+    <h1>Когда тебе удобно?</h1>
+    <p class="sub">Выбери день и время, которое больше нравится.</p>
+
+    <div class="field">
+      <label>Дата</label>
+      <input type="date" id="dateInput">
+    </div>
+    <div class="field">
+      <label>Время</label>
+      <div class="time-grid" id="timeGrid">
+        <button class="choice-btn" data-t="Днём (12:00)">Днём · 12:00</button>
+        <button class="choice-btn" data-t="Вечером (18:00)">Вечером · 18:00</button>
+        <button class="choice-btn" data-t="Ночью (21:00)">Ночью · 21:00</button>
+        <button class="choice-btn" data-t="Как скажешь">Как скажешь</button>
+      </div>
+    </div>
+
+    <button class="next-btn" id="toStep2" disabled onclick="goStep(2)">Дальше →</button>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step" id="step2">
+    <p class="eyebrow">Почти готово</p>
+    <h1>Что тебе больше хочется?</h1>
+    <p class="sub">Выбери, чем займёмся в этот день.</p>
+
+    <div class="food-grid" id="foodGrid">
+      <div class="food-card" data-f="Кино 🎬"><span class="emoji">🎬</span><span class="label">Кино</span></div>
+      <div class="food-card" data-f="Ресторан 🍽️"><span class="emoji">🍽️</span><span class="label">Ресторан</span></div>
+      <div class="food-card" data-f="Прогулка 🌇"><span class="emoji">🌇</span><span class="label">Прогулка</span></div>
+      <div class="food-card" data-f="Мастер-класс 🎨"><span class="emoji">🎨</span><span class="label">Мастер-класс</span></div>
+      <div class="food-card wide" data-f="Выставка / концерт 🖼️"><span class="emoji">🖼️</span><span class="label">Выставка / концерт</span></div>
+    </div>
+
+    <button class="next-btn" id="toFinal" disabled onclick="goStep(3)">Готово</button>
+  </div>
+
+  <!-- FINAL -->
+  <div class="step final" id="step3">
+    <h1>Значит, договорились!</h1>
+    <p class="sub">🐑</p>
+    <div class="summary" id="summaryBox"></div>
+    <button class="next-btn" id="sendBtn" onclick="sendToTelegram()">Отправить ответ в Telegram ✈️</button>
+    <p class="hint" id="sentHint"></p>
+  </div>
+
+</div>
+
+<script>
+  // ---- ambient petals ----
+  const petalEmojis = ['🌸','💮','💅'];
+  for(let i=0;i<14;i++){
+    const p = document.createElement('div');
+    p.className='petal';
+    p.textContent = petalEmojis[Math.floor(Math.random()*petalEmojis.length)];
+    p.style.left = Math.random()*100+'vw';
+    p.style.animationDuration = (10+Math.random()*10)+'s';
+    p.style.animationDelay = (-Math.random()*15)+'s';
+    p.style.fontSize = (12+Math.random()*14)+'px';
+    document.body.appendChild(p);
+  }
+
+  // ---- "Нет" dodges (works for mouse hover AND touch tap) ----
+  const noBtn = document.getElementById('noBtn');
+  const noZone = document.getElementById('noZone');
+  const hint = document.getElementById('hint');
+  const dodgeLines = [
+    "Лалка",
+    "Анлак",
+    "МОГНУТА",
+    "Забулена",
+    "Бож чел нажми да",
+    "Кринж",
+    "🚨🚨🚨"
+  ];
+  let dodgeCount = 0;
+  let lastPos = null;
+
+  function dodge(){
+    const padding = 6;
+    const zoneW = noZone.clientWidth - noBtn.offsetWidth - padding*2;
+    const zoneH = noZone.clientHeight - noBtn.offsetHeight - padding*2;
+    let x, y, dist;
+    // pick a spot that's meaningfully far from where it just was (important for fat-finger taps)
+    do{
+      x = padding + Math.random()*Math.max(zoneW, 1);
+      y = padding + Math.random()*Math.max(zoneH, 1);
+      dist = lastPos ? Math.hypot(x-lastPos.x, y-lastPos.y) : 999;
+    } while(dist < Math.min(zoneW, zoneH)*0.5 && zoneW > 0 && zoneH > 0);
+    lastPos = {x,y};
+    noBtn.style.left = x + 'px';
+    noBtn.style.top = y + 'px';
+    noBtn.style.transform = 'translate(0,0)';
+    dodgeCount++;
+    if(dodgeCount >= 10){
+      hint.textContent = '🧠❌';
+      hint.style.fontSize = '26px';
+    }else{
+      hint.style.fontSize = '';
+      hint.textContent = dodgeLines[Math.min(dodgeCount-1, dodgeLines.length-1)];
+    }
+  }
+
+  // desktop: flee on hover, before the click even lands
+  noBtn.addEventListener('mouseenter', dodge);
+
+  // mobile: flee the instant the finger touches it, and swallow the touch
+  // so it doesn't also fire a synthetic click on the (now empty) spot
+  noBtn.addEventListener('touchstart', function(e){
+    e.preventDefault();
+    dodge();
+  }, { passive:false });
+
+  // fallback for input types where neither of the above fires (rare hybrids)
+  noBtn.addEventListener('click', function(e){
+    e.preventDefault();
+    dodge();
+  });
+
+  // ---- steps navigation ----
+  let selectedTime = null;
+  let selectedFood = null;
+
+  function goStep(i){
+    document.querySelectorAll('.step').forEach(s=>s.classList.remove('visible'));
+    document.getElementById('step'+i).classList.add('visible');
+    document.querySelectorAll('.progress span').forEach(s=>{
+      const si = +s.dataset.i;
+      s.classList.remove('active','done');
+      if(si < i) s.classList.add('done');
+      if(si === i) s.classList.add('active');
+    });
+    if(i===3) buildSummary();
+  }
+
+  // step2 time selection
+  document.getElementById('timeGrid').addEventListener('click', e=>{
+    const btn = e.target.closest('.choice-btn');
+    if(!btn) return;
+    document.querySelectorAll('#timeGrid .choice-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedTime = btn.dataset.t;
+    checkStep2();
+  });
+  const dateInput = document.getElementById('dateInput');
+  dateInput.addEventListener('change', checkStep2);
+  function checkStep2(){
+    document.getElementById('toStep2').disabled = !(dateInput.value && selectedTime);
+  }
+
+  // step3 food selection
+  document.getElementById('foodGrid').addEventListener('click', e=>{
+    const card = e.target.closest('.food-card');
+    if(!card) return;
+    document.querySelectorAll('.food-card').forEach(c=>c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedFood = card.dataset.f;
+    document.getElementById('toFinal').disabled = false;
+  });
+
+  let lastDateStr = '';
+
+  function buildSummary(){
+    const d = new Date(dateInput.value);
+    lastDateStr = d.toLocaleDateString('ru-RU', { day:'numeric', month:'long', year:'numeric' });
+    document.getElementById('summaryBox').innerHTML = `
+      <div>📅 <b>Дата:</b> ${lastDateStr}</div>
+      <div>🕐 <b>Время:</b> ${selectedTime}</div>
+      <div>🍽️ <b>Программа:</b> ${selectedFood}</div>
+    `;
+  }
+
+  // TELEGRAM_USERNAME — поменяй здесь, если ник изменится
+  const TELEGRAM_USERNAME = 'slgprv';
+
+  function sendToTelegram(){
+    const message =
+      `📅 ${lastDateStr}\n` +
+      `🕐 ${selectedTime}\n` +
+      `🍽️ ${selectedFood}`;
+    const url = `https://t.me/${TELEGRAM_USERNAME}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    document.getElementById('sentHint').textContent = 'Открываю Telegram… если не сработало само — просто пришли этот текст ✈️';
+  }
+</script>
+</body>
+</html>
